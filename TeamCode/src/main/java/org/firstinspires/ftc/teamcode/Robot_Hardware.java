@@ -32,9 +32,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
 
 /**
  * This file works in conjunction with the External Hardware Class sample called: ConceptExternalHardwareClass.java
@@ -66,6 +63,8 @@ public class Robot_Hardware {
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
 
+    private int eLeft, eRight, eLateral; // encoder values
+
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot_Hardware(LinearOpMode opmode) {
         myOpMode = opmode;
@@ -87,10 +86,12 @@ public class Robot_Hardware {
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        resetEncoderValues();
 
         // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
         // leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -151,4 +152,26 @@ public class Robot_Hardware {
         rightBackDrive.setPower(rrPower);
     }
 
+    /**
+     * Get the odometry dead wheel encoder values
+     * Returns an array of 3 integer values
+     * @return
+     */
+    public int[] getEncoderValues() {
+        // Need to confirm these are how the odometry encoders are mapped
+
+        int eValues[] = new int[3];
+        eValues[0] = leftFrontDrive.getCurrentPosition();
+        eValues[1] = rightFrontDrive.getCurrentPosition();
+        eValues[2] = leftBackDrive.getCurrentPosition();
+
+        return eValues;
+    }
+
+    public void resetEncoderValues() {
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    }
 }

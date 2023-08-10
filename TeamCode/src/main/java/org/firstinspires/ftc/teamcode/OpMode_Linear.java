@@ -29,13 +29,14 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcontroller.external.samples.RobotHardware;
 
 /**
  * This file contains an example of a Linear "OpMode".
@@ -88,17 +89,33 @@ public class OpMode_Linear extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            double max;
+
+            int[] encoderValues = new int[3];
+            encoderValues = robot.getEncoderValues();
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;
+            double axial_input   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double lateral_input =  gamepad1.left_stick_x;
+            double yaw_input     =  gamepad1.right_stick_x;
 
-            robot.driveRobot(axial, lateral, yaw);
+            /**
+            double axial_sign = axial_input / abs(axial_input);
+            double lateral_sign = lateral_input / abs(lateral_input);
+            double yaw_sign = yaw_input / abs(yaw_input);
+
+            double axial_output = axial_sign * pow(axial_input, 2);
+            double lateral_output = lateral_sign * pow(lateral_input, 2);
+            double yaw_output = yaw_sign * pow(yaw_input,2);
+            **/
+
+            robot.driveRobot(axial_input, lateral_input, yaw_input);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Encoder","Left: " + encoderValues[0]);
+            telemetry.addData("Encoder","Right: " + encoderValues[1]);
+            telemetry.addData("Encoder","Lateral: " + encoderValues[2]);
             telemetry.update();
         }
     }}
+
