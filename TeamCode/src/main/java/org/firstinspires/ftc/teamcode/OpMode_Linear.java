@@ -38,6 +38,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 /**
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -75,6 +77,15 @@ public class OpMode_Linear extends LinearOpMode {
     Robot_Hardware robot       = new Robot_Hardware(this);
     private ElapsedTime runtime = new ElapsedTime();
 
+    enum Gripper_Position {
+        OPEN,
+        CLOSED
+    }
+
+    private Gripper_Position gripperPosition = Gripper_Position.OPEN;
+    private double leftGripper_Position = 0.0;
+    private double  rightGripper_Position = 0.0;
+
     @Override
     public void runOpMode() {
 
@@ -83,6 +94,8 @@ public class OpMode_Linear extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+
+        gripperPosition = Gripper_Position.OPEN;
 
         waitForStart();
         runtime.reset();
@@ -96,7 +109,15 @@ public class OpMode_Linear extends LinearOpMode {
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             double axial_input   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double lateral_input =  gamepad1.left_stick_x;
-            double yaw_input     =  gamepad1.right_stick_x;
+            // yaw raw is way too fast.  Divide by 2
+            double yaw_input     =  gamepad1.right_stick_x / 2.0;
+
+            boolean actuate_gripper = gamepad1.right_bumper;
+            boolean open_gripper = gamepad1.left_bumper;
+            boolean left_increase = gamepad1.dpad_up;
+            boolean left_decrease = gamepad1.dpad_down;
+            boolean right_increase = gamepad1.dpad_right;
+            boolean right_decrease = gamepad1.dpad_left;
 
             /**
             double axial_sign = axial_input / abs(axial_input);
@@ -110,12 +131,49 @@ public class OpMode_Linear extends LinearOpMode {
 
             robot.driveRobot(axial_input, lateral_input, yaw_input);
 
+            if (actuate_gripper) {
+                if (gripperPosition == Gripper_Position.OPEN) {
+                    robot.setGripperPositionClosed();
+                    gripperPosition = Gripper_Position.CLOSED;
+                }
+            }
+
+            if (open_gripper) {
+                if (gripperPosition == Gripper_Position.CLOSED) {
+                    robot.setGripperPositionOpen();
+                    gripperPosition = Gripper_Position.OPEN;
+                }
+            }
+
+            if (left_increase) {
+                leftGripper_Position += 0.01;
+                robot.setLeftGripperPosition(leftGripper_Position);
+            }
+
+            if (left_decrease) {
+                leftGripper_Position -= 0.01;
+                robot.setLeftGripperPosition(leftGripper_Position);
+            }
+
+            if (right_increase) {
+                rightGripper_Position += 0.01;
+                robot.setRightGripperPosition(rightGripper_Position);
+            }
+
+            if (right_decrease) {
+                rightGripper_Position -= 0.01;
+                robot.setRightGripperPosition(rightGripper_Position);
+            }
+
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Encoder","Left: " + encoderValues[0]);
             telemetry.addData("Encoder","Right: " + encoderValues[1]);
             telemetry.addData("Encoder","Lateral: " + encoderValues[2]);
+            telemetry.addData("Servo", "Left: " + leftGripper_Position);
+            telemetry.addData("Servo", "Right: " + rightGripper_Position);
             telemetry.update();
         }
-    }}
+    }
+}
 

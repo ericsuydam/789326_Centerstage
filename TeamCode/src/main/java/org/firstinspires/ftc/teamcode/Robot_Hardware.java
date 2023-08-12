@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * This file works in conjunction with the External Hardware Class sample called: ConceptExternalHardwareClass.java
@@ -62,8 +64,23 @@ public class Robot_Hardware {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private Servo leftGripperServo = null;
+    private Servo rightGripperServo = null;
 
     private int eLeft, eRight, eLateral; // encoder values
+
+    // If GoBilda is like REV, then
+    // -1.0 is full left, which is -135 degrees
+    // +1.0 is full right, which is +135 degrees
+
+    // left Position Open
+    static double leftServoPositionOpen = 0.5;
+    // left Position Closed
+    static double leftServoPositionClosed = 0.0;
+    // right Position Open
+    static double rightServoPositionOpen = 0.4;
+    // right Position Closed
+    static double rightServoPositionClosed = 0.8;
 
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot_Hardware(LinearOpMode opmode) {
@@ -83,6 +100,9 @@ public class Robot_Hardware {
         leftBackDrive = myOpMode.hardwareMap.get(DcMotor.class, "left_rear");
         rightBackDrive = myOpMode.hardwareMap.get(DcMotor.class, "right_rear");
 
+        leftGripperServo = myOpMode.hardwareMap.get(Servo.class,"leftGripperServo");
+        rightGripperServo = myOpMode.hardwareMap.get(Servo.class, "rightGripperServo");
+
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -92,6 +112,10 @@ public class Robot_Hardware {
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         resetEncoderValues();
+
+        setGripperPositionOpen();
+        // setLeftGripperPosition(0.0);
+        // setRightGripperPosition(0.0);
 
         // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
         // leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -173,5 +197,23 @@ public class Robot_Hardware {
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    }
+
+    public void setLeftGripperPosition (double servoPosition) {
+        leftGripperServo.setPosition(servoPosition);
+    }
+
+    public void setRightGripperPosition (double servoPosition) {
+        rightGripperServo.setPosition(servoPosition);
+    }
+
+    public void setGripperPositionOpen() {
+        leftGripperServo.setPosition(leftServoPositionOpen);
+        rightGripperServo.setPosition(rightServoPositionOpen);
+    }
+
+    public void setGripperPositionClosed() {
+        leftGripperServo.setPosition(leftServoPositionClosed);
+        rightGripperServo.setPosition(rightServoPositionClosed);
     }
 }
