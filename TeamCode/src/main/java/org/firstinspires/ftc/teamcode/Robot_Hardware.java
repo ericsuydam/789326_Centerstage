@@ -29,11 +29,15 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 /**
  * This file works in conjunction with the External Hardware Class sample called: ConceptExternalHardwareClass.java
@@ -59,13 +63,16 @@ public class Robot_Hardware {
     /* Declare OpMode members. */
     private LinearOpMode myOpMode = null;   // gain access to methods in the calling OpMode.
 
-    // Define Motor and Servo objects  (Make them private so they can't be accessed externally)
+    // Define Motor objects  (Make them private so they can't be accessed externally)
     private DcMotor leftFrontDrive = null;
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    // Define Servo objects
     private Servo leftGripperServo = null;
     private Servo rightGripperServo = null;
+    // Define IMU object
+    private IMU imu = null;
 
     private int eLeft, eRight, eLateral; // encoder values
 
@@ -102,6 +109,14 @@ public class Robot_Hardware {
 
         leftGripperServo = myOpMode.hardwareMap.get(Servo.class,"leftGripperServo");
         rightGripperServo = myOpMode.hardwareMap.get(Servo.class, "rightGripperServo");
+
+        imu = myOpMode.hardwareMap.get(IMU.class, "imu");
+        // Adjust the orientation parameters to match robot
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
+        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
+        imu.initialize(parameters);
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
@@ -145,16 +160,12 @@ public class Robot_Hardware {
 
         // Normalize the values so no wheel power exceeds 100%
         // This ensures that the robot maintains the desired motion.
-        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-        max = Math.max(max, Math.abs(leftBackPower));
-        max = Math.max(max, Math.abs(rightBackPower));
+        double max = Math.max(Math.abs(axial) + Math.abs(lateral) + Math.abs(yaw),1);
 
-        if (max > 1.0) {
-            leftFrontPower  /= max;
-            rightFrontPower /= max;
-            leftBackPower   /= max;
-            rightBackPower  /= max;
-        }
+        leftFrontPower  /= max;
+        rightFrontPower /= max;
+        leftBackPower   /= max;
+        rightBackPower  /= max;
 
         // Use existing function to drive both wheels.
         setDrivePower(leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
@@ -215,5 +226,9 @@ public class Robot_Hardware {
     public void setGripperPositionClosed() {
         leftGripperServo.setPosition(leftServoPositionClosed);
         rightGripperServo.setPosition(rightServoPositionClosed);
+    }
+
+    public double getHeading() {
+        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
     }
 }
