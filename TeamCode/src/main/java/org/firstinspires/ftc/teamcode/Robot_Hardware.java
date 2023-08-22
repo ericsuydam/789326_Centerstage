@@ -74,11 +74,25 @@ public class Robot_Hardware {
     // Define IMU object
     private IMU imu = null;
 
-    private int eLeft, eRight, eLateral; // encoder values
-
-    // If GoBilda is like REV, then
-    // -1.0 is full left, which is -135 degrees
-    // +1.0 is full right, which is +135 degrees
+    // Define and initialize odometry variables
+    private int current_encoderValues[] = new int[3];
+    private int previous_encoderValues[] = new int[3];
+    private int delta_encoderValues[] = new int[3];
+    // delta_movement is delta_encoderValues * WHEEL_CIRCUMFERENCE in millimeters
+    private double delta_movement[] = new double[3];
+    // Pose is the x, y, and heading of the robot on the field, relative to the start location & orientation
+    private double current_Pose[] = new double[3];
+    private double previous_Pose[] = new double[3];
+    private double delta_Pose[] = new double[3];
+    // Define and initialize physical odometry measurements
+    // @TRACKWIDTH is the distance between the left and right odometry wheels
+    public static final double TRACKWIDTH = 320.0;
+    /** @FOREWARDOFFSET is the distance from the center of rotation to the lateral odometry wheel
+     * If the lateral wheel is forward of the center of rotation, the value is positive
+     * If the lateral wheel is behind the center of rotation, the value is negative
+    */
+    public static final double FOREWARDOFFSET = -160.0;
+    public static final double WHEEL_CIRCUMFERENCE = 50.0 * Math.PI;
 
     // left Position Open
     static double leftServoPositionOpen = 0.5;
@@ -106,35 +120,29 @@ public class Robot_Hardware {
         rightFrontDrive = myOpMode.hardwareMap.get(DcMotor.class, "right_front");
         leftBackDrive = myOpMode.hardwareMap.get(DcMotor.class, "left_rear");
         rightBackDrive = myOpMode.hardwareMap.get(DcMotor.class, "right_rear");
-
-        leftGripperServo = myOpMode.hardwareMap.get(Servo.class,"leftGripperServo");
-        rightGripperServo = myOpMode.hardwareMap.get(Servo.class, "rightGripperServo");
-
-        imu = myOpMode.hardwareMap.get(IMU.class, "imu");
-        // Adjust the orientation parameters to match robot
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
-        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
-        imu.initialize(parameters);
-
-        // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
-        // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
-        // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
+        // Define and initialize Servos
+        leftGripperServo = myOpMode.hardwareMap.get(Servo.class,"leftGripperServo");
+        rightGripperServo = myOpMode.hardwareMap.get(Servo.class, "rightGripperServo");
+
+        // Define and initialize IMU
+        imu = myOpMode.hardwareMap.get(IMU.class, "imu");
+        // Adjust the orientation parameters
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
+        imu.initialize(parameters);
+
+        // Call resetEncoderValues to reset all three at once
         resetEncoderValues();
+        updatePose();
 
+        // Set the initial state of the Gripper to be Open
         setGripperPositionOpen();
-        // setLeftGripperPosition(0.0);
-        // setRightGripperPosition(0.0);
-
-        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
-        // leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        // rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -149,7 +157,28 @@ public class Robot_Hardware {
      * @param lateral =  gamepad1.left_stick_x;
      * @param yaw     =  gamepad1.right_stick_x;
      */
-    public void driveRobot(double axial, double lateral, double yaw) {
+    public void driveRobot(double axial_input, double lateral_input, double yaw_input) {
+
+        // Convert raw gamepad inputs to outputs
+        int axial_sign = 1;
+        int lateral_sign = 1;
+        int yaw_sign = 1;
+
+        // capture the sign of the inputs before modifying
+        if (axial_input < 0) {
+            axial_sign = -1;
+        }
+        if (lateral_input < 0) {
+            lateral_sign = -1;
+        }
+        if (yaw_input < 0) {
+            yaw_sign = -1;
+        }
+
+        // Modify the raw inputs
+        double axial = Math.pow(axial_input, 2) * axial_sign;
+        double lateral = Math.pow(lateral_input, 2) * lateral_sign;
+        double yaw = Math.pow(yaw_input, 2) * yaw_sign;
 
         // Combine the joystick requests for each axis-motion to determine each wheel's power.
         // Set up a variable for each drive wheel to save the power level for telemetry.
@@ -193,14 +222,11 @@ public class Robot_Hardware {
      * @return
      */
     public int[] getEncoderValues() {
-        // Need to confirm these are how the odometry encoders are mapped
+        return current_encoderValues;
+    }
 
-        int eValues[] = new int[3];
-        eValues[0] = leftFrontDrive.getCurrentPosition();
-        eValues[1] = rightFrontDrive.getCurrentPosition();
-        eValues[2] = leftBackDrive.getCurrentPosition();
-
-        return eValues;
+    public double[] getPose() {
+        return current_Pose[];
     }
 
     public void resetEncoderValues() {
@@ -228,7 +254,49 @@ public class Robot_Hardware {
         rightGripperServo.setPosition(rightServoPositionClosed);
     }
 
-    public double getHeading() {
+    public double getIMUHeading() {
         return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+    }
+
+    /**
+     *
+     */
+    public void updatePose() {
+
+        // enum to help keep the array positions clear
+        int LEFT = 0;
+        int RIGHT = 1;
+        int LATERAL = 2;
+        int X = 0;
+        int Y = 1;
+        int PHI = 2;
+
+        // Store current values in previous values
+        previous_encoderValues = current_encoderValues;
+        previous_Pose = current_Pose;
+
+        // Get updated encoderValues
+        current_encoderValues = getEncoderValues();
+
+        // update deltaEncoderValues.  Unsure if subtracting one array from another would also work
+        for (int i = 0; i < current_encoderValues.length; i++) {
+            delta_encoderValues[i] = current_encoderValues[i] - previous_encoderValues[i];
+        }
+
+        // update delta_movement
+        for (int i = 0; i < delta_movement.length; i++) {
+            delta_movement[i] = delta_encoderValues[i] * WHEEL_CIRCUMFERENCE;
+        }
+
+        // update delta_Pose
+        delta_Pose[PHI] = (delta_movement[LEFT] - delta_movement[RIGHT]) * TRACKWIDTH;
+        delta_Pose[X] = (delta_movement[LEFT] + delta_movement[RIGHT]) / 2.0;
+        delta_Pose[Y] = (delta_movement[LATERAL] - (FOREWARDOFFSET * delta_Pose[PHI]));
+
+        // update current_Pose
+        current_Pose[X] = previous_Pose[X] + delta_Pose[X];
+        current_Pose[Y] = previous_Pose[Y] + delta_Pose[Y];
+        current_Pose[PHI] = previous_Pose[PHI] + delta_Pose[PHI];
+
     }
 }

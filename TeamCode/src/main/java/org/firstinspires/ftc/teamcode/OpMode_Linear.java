@@ -86,6 +86,8 @@ public class OpMode_Linear extends LinearOpMode {
     private double leftGripper_Position = 0.0;
     private double  rightGripper_Position = 0.0;
 
+    private double[] robot_Pose = new double[3];
+
     @Override
     public void runOpMode() {
 
@@ -103,10 +105,8 @@ public class OpMode_Linear extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            int[] encoderValues = new int[3];
-            encoderValues = robot.getEncoderValues();
             // Note that robotHeading is returned in RADIANS
-            double robotHeading = robot.getHeading();
+            double robotHeading = robot.getIMUHeading();
             // Convert to degrees
             double robotHeadingDegrees = robotHeading * 180.0 / Math.PI;
             /** After initialization, turning to the left results in a positive heading value
@@ -114,7 +114,10 @@ public class OpMode_Linear extends LinearOpMode {
              *  At +180, the heading converts to -180 and begins to count down,
              *  The heading will not accumulate.  It will never go beyond +180 or -180
             **/
-            
+
+            robot.updatePose();
+            robot_Pose = robot.getPose();
+
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             double axial_input   = -gamepad1.left_stick_y / 2.0;  // Note: pushing stick forward gives negative value
             double lateral_input =  gamepad1.left_stick_x / 2.0;
@@ -175,13 +178,11 @@ public class OpMode_Linear extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Encoder","Left: " + encoderValues[0]);
-            telemetry.addData("Encoder","Right: " + encoderValues[1]);
-            telemetry.addData("Encoder","Lateral: " + encoderValues[2]);
-            telemetry.addData("Servo", "Left: " + leftGripper_Position);
-            telemetry.addData("Servo", "Right: " + rightGripper_Position);
+            telemetry.addData("Pose","X Location: " + robot_Pose[0]);
+            telemetry.addData("Pose","Y Location: " + robot_Pose[1]);
+            telemetry.addData("Pose","Heading: " + robot_Pose[2]);
             //telemetry.addData("IMU", "Heading" + robotHeadingDegrees);
-            telemetry.addData("IMU","%.1f degrees", robotHeadingDegrees);
+            telemetry.addData("IMU","%.0f degrees", robotHeadingDegrees);
             telemetry.update();
         }
     }
