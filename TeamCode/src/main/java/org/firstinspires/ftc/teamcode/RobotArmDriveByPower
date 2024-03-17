@@ -94,8 +94,8 @@ public class RobotArmDriveByPower extends LinearOpMode {
             double leftPower;
             double rightPower;
 
-            leftArmPosition = leftArm.getCurrentPosition;
-            rightArmPosition = rightArm.getCurrentPosition;
+            leftArmPosition = leftArm.getCurrentPosition();
+            rightArmPosition = rightArm.getCurrentPosition();
 
             double drive = -gamepad1.left_stick_y;
             double turn  =  gamepad1.right_stick_x;
