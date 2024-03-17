@@ -59,6 +59,9 @@ public class RobotArmDriveByPower extends LinearOpMode {
     private DcMotor leftArm = null;
     private DcMotor rightArm = null;
 
+    private int leftArmPosition = 0;
+    private int rightArmPosition = 0;
+
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
@@ -91,11 +94,9 @@ public class RobotArmDriveByPower extends LinearOpMode {
             double leftPower;
             double rightPower;
 
-            // Choose to drive using either Tank Mode, or POV Mode
-            // Comment out the method that's not used.  The default below is POV.
+            leftArmPosition = leftArm.getCurrentPosition;
+            rightArmPosition = rightArm.getCurrentPosition;
 
-            // POV Mode uses left stick to go forward, and right stick to turn.
-            // - This uses basic math to combine motions and is easier to drive straight.
             double drive = -gamepad1.left_stick_y;
             double turn  =  gamepad1.right_stick_x;
             leftPower    = Range.clip(drive, -1.0, 1.0) ;
@@ -112,6 +113,7 @@ public class RobotArmDriveByPower extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Positions", "left (%d), right (%d)", leftArmPosition, rightArmPosition);
             telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
             telemetry.update();
         }
