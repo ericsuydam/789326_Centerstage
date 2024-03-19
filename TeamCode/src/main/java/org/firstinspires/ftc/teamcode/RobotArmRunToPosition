@@ -75,6 +75,11 @@ public class RobotArmRunToPosition extends LinearOpMode {
 
     public String robotStateDescription = null;
 
+    public boolean a_isPressed = false;
+    public boolean b_isPressed = false;
+    public boolean x_isPressed = false;
+    public boolean y_isPressed = false;
+
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
@@ -125,19 +130,45 @@ public class RobotArmRunToPosition extends LinearOpMode {
             boolean b = gamepad1.b;
             boolean x = gamepad1.x;
 
+            // Check if any buttons changed state
+            // x
+            if (x || !x_isPressed) {
+                // if (x is true) and not(x_isPressed is false)
+                x_isPressed = true;
+                // if (x is true) and not(x_isPressed is true) then nothing changes
+            }
+            // y
+            if (y || !y_isPressed) {
+                // if (y is true) and not(y_isPressed is false)
+                y_isPressed = true;
+                // if (y is true) and not(y_isPressed is true) then nothing changes
+            }
+            // a
+            if (a || !a_isPressed) {
+                // if (a is true) and not(a_isPressed is false)
+                a_isPressed = true;
+                // if (a is true) and not(a_isPressed is true) then nothing changes
+            }
+            // b
+            if (b || !b_isPressed) {
+                // if (b is true) and not(b_isPressed is false)
+                b_isPressed = true;
+                // if (b is true) and not(b_isPressed is true) then nothing changes
+            }
+
             switch (robotState) {
               
               case READY:
                 break;
 
               case ATCOLLECTPOSITION:
-                if (y) {
+                if (y_isPressed) {
                   leftArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                   rightArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                   leftArm.setTargetPosition(DEPOSITTARGETPOSITION);
                   rightArm.setTargetPosition(DEPOSITTARGETPOSITION);
-                  leftArm.setPower(power);
-                  rightArm.setPower(power);
+                  leftArm.setPower(-power);
+                  rightArm.setPower(-power);
                   robotState = ROBOTSTATES.MOVINGTODEPOSITPOSITION;
                 }
                 break;
@@ -155,7 +186,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
                 break;
 
               case MOVINGTOCOLLECTPOSITION:
-                if (!leftArm.isBusy) {
+                if (!leftArm.isBusy()) {
                   leftArm.setPower(0.0);
                   rightArm.setPower(0.0);
                   robotState = ROBOTSTATES.ATCOLLECTPOSITION;
@@ -163,7 +194,11 @@ public class RobotArmRunToPosition extends LinearOpMode {
                 break;
 
               case MOVINGTODEPOSITPOSITION:
-                if (!leftArm.isBusy) {
+                if (leftArm.isBusy()) {
+                    robotState = ROBOTSTATES.MOVINGTODEPOSITPOSITION
+                    y_isPressed = false;
+                }
+                else {
                   leftArm.setPower(0.0);
                   rightArm.setPower(0.0);
                   robotState = ROBOTSTATES.ATDEPOSITPOSITION;
