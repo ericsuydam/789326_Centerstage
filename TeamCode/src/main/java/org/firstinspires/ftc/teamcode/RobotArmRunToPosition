@@ -36,20 +36,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-
-/*
- * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
- * the autonomous or the teleop period of an FTC match. The names of OpModes appear on the menu
- * of the FTC Driver Station. When a selection is made from the menu, the corresponding OpMode
- * class is instantiated on the Robot Controller and executed.
- *
- * This particular OpMode just executes a basic Tank Drive Teleop for a two wheeled robot
- * It includes all the skeletal structure that all linear OpModes contain.
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
- */
-
 @TeleOp(name="Robot Arm Run To Position", group="Linear OpMode")
 
 public class RobotArmRunToPosition extends LinearOpMode {
@@ -63,9 +49,9 @@ public class RobotArmRunToPosition extends LinearOpMode {
     private int rightArmPosition = 0;
 
     private int final COLLECTARGETPOSITION = 0;
-    private int final DEPOSITTARGETPOSITION = -1300;
+    private int final DEPOSITTARGETPOSITION = -200;
 
-    private double power = 0.0;
+    private double power = 0.5;
 
     public enum ROBOTSTATES {
       READY, ATCOLLECTPOSITION, ATDEPOSITPOSITION, MOVINGTOCOLLECTPOSITION, MOVINGTODEPOSITPOSITION
@@ -91,17 +77,13 @@ public class RobotArmRunToPosition extends LinearOpMode {
         leftArm  = hardwareMap.get(DcMotor.class, "left_arm");
         rightArm = hardwareMap.get(DcMotor.class, "right_arm");
 
-        // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
-        // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
-        // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
+        // Left and right motors spin in opposite directions
         leftArm.setDirection(DcMotor.Direction.REVERSE);
         rightArm.setDirection(DcMotor.Direction.FORWARD);
 
+        // Reset the motor encoders to zero at the initialization position
         leftArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        // leftArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        // rightArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Set zero power behavior
         leftArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -118,10 +100,6 @@ public class RobotArmRunToPosition extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            // Setup a variable for each drive wheel to save power level for telemetry
-            double leftPower;
-            double rightPower;
-
             leftArmPosition = leftArm.getCurrentPosition();
             rightArmPosition = rightArm.getCurrentPosition();
 
@@ -131,29 +109,47 @@ public class RobotArmRunToPosition extends LinearOpMode {
             boolean x = gamepad1.x;
 
             // Check if any buttons changed state
+            // TODO: move this code to a method
             // x
-            if (x || !x_isPressed) {
-                // if (x is true) and not(x_isPressed is false)
+            if (x && !x_isPressed) {
+                // if x is true AND x_isPressed is false, change x_isPressed to true
                 x_isPressed = true;
                 // if (x is true) and not(x_isPressed is true) then nothing changes
+            } elseif (!x && x_isPressed) {
+                // x is false and x_isPressed is true, change x_isPressed to false
+                x_isPressed = false;
+            } else {
+                // Don't change anything
             }
             // y
-            if (y || !y_isPressed) {
-                // if (y is true) and not(y_isPressed is false)
+            if (y && !y_isPressed) {
+                // if (y is true) AND not(y_isPressed is false)
                 y_isPressed = true;
-                // if (y is true) and not(y_isPressed is true) then nothing changes
+            } elseif (!y && y_isPressed) {
+                // y is false and y_isPressed is true, change y_isPressed to false
+                y_isPressed = false;
+            } else {
+                // Don't change anything
             }
             // a
-            if (a || !a_isPressed) {
-                // if (a is true) and not(a_isPressed is false)
+            if (a && !a_isPressed) {
+                // if (a is true) AND not(a_isPressed is false)
                 a_isPressed = true;
-                // if (a is true) and not(a_isPressed is true) then nothing changes
+            } elseif (!a && a_isPressed) {
+                // a is false and a_isPressed is true, change a_isPressed to false
+                a_isPressed = false;
+            } else {
+                // Don't change anything
             }
             // b
-            if (b || !b_isPressed) {
+            if (b && !b_isPressed) {
                 // if (b is true) and not(b_isPressed is false)
                 b_isPressed = true;
-                // if (b is true) and not(b_isPressed is true) then nothing changes
+            } elseif (!b && b_isPressed) {
+                // b is false and b_isPressed is true, change b_isPressed to false
+                b_isPressed = false;
+            } else {
+                // Don't change anything
             }
 
             switch (robotState) {
@@ -163,8 +159,8 @@ public class RobotArmRunToPosition extends LinearOpMode {
 
               case ATCOLLECTPOSITION:
                 if (y_isPressed) {
-                  leftArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                  rightArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                   leftArm.setTargetPosition(DEPOSITTARGETPOSITION);
                   rightArm.setTargetPosition(DEPOSITTARGETPOSITION);
                   leftArm.setPower(-power);
@@ -174,19 +170,19 @@ public class RobotArmRunToPosition extends LinearOpMode {
                 break;
 
               case ATDEPOSITPOSITION:
-                if (a) {
-                  leftArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                  rightArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                if (a_isPressed) {
+                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                   leftArm.setTargetPosition(COLLECTARGETPOSITION);
                   rightArm.setTargetPosition(COLLECTARGETPOSITION);
-                  leftArm.setPower(power);
-                  rightArm.setPower(power);
+                  leftArm.setPower(+power);
+                  rightArm.setPower(+power);
                   robotState = ROBOTSTATES.MOVINGTOCOLLECTPOSITION;
                 }
                 break;
 
               case MOVINGTOCOLLECTPOSITION:
-                if (!leftArm.isBusy()) {
+                if (!leftArm.isBusy() || !rightArm.isBusy()) {
                   leftArm.setPower(0.0);
                   rightArm.setPower(0.0);
                   robotState = ROBOTSTATES.ATCOLLECTPOSITION;
@@ -194,11 +190,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
                 break;
 
               case MOVINGTODEPOSITPOSITION:
-                if (leftArm.isBusy()) {
-                    robotState = ROBOTSTATES.MOVINGTODEPOSITPOSITION
-                    y_isPressed = false;
-                }
-                else {
+                if (!leftArm.isBusy() || !rightArm.isBusy()) {
                   leftArm.setPower(0.0);
                   rightArm.setPower(0.0);
                   robotState = ROBOTSTATES.ATDEPOSITPOSITION;
@@ -211,15 +203,6 @@ public class RobotArmRunToPosition extends LinearOpMode {
             }
 
             robotStateDescription = getRobotStateDescription(robotState);
-          
-            // double drive = -gamepad1.left_stick_y;
-            
-            // leftPower    = Range.clip(drive, -1.0, 1.0) ;
-            // rightPower   = Range.clip(drive, -1.0, 1.0) ;
-
-            // Send calculated power to motors
-            // leftArm.setPower(leftPower);
-            // rightArm.setPower(rightPower);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -227,6 +210,10 @@ public class RobotArmRunToPosition extends LinearOpMode {
             telemetry.addData("State: " + robotStateDescription);
             telemetry.update();
         }
+
+        leftArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
     }
 }
 
