@@ -48,10 +48,10 @@ public class RobotArmRunToPosition extends LinearOpMode {
     private int leftArmPosition = 0;
     private int rightArmPosition = 0;
 
-    private int final COLLECTARGETPOSITION = 0;
-    private int final DEPOSITTARGETPOSITION = -200;
+    private int COLLECTARGETPOSITION = 0;
+    private int DEPOSITTARGETPOSITION = -1000;
 
-    private double power = 0.5;
+    private double power = 0.75;
 
     public enum ROBOTSTATES {
       READY, ATCOLLECTPOSITION, ATDEPOSITPOSITION, MOVINGTOCOLLECTPOSITION, MOVINGTODEPOSITPOSITION
@@ -115,7 +115,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
                 // if x is true AND x_isPressed is false, change x_isPressed to true
                 x_isPressed = true;
                 // if (x is true) and not(x_isPressed is true) then nothing changes
-            } elseif (!x && x_isPressed) {
+            } else if (!x && x_isPressed) {
                 // x is false and x_isPressed is true, change x_isPressed to false
                 x_isPressed = false;
             } else {
@@ -125,7 +125,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
             if (y && !y_isPressed) {
                 // if (y is true) AND not(y_isPressed is false)
                 y_isPressed = true;
-            } elseif (!y && y_isPressed) {
+            } else if (!y && y_isPressed) {
                 // y is false and y_isPressed is true, change y_isPressed to false
                 y_isPressed = false;
             } else {
@@ -135,7 +135,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
             if (a && !a_isPressed) {
                 // if (a is true) AND not(a_isPressed is false)
                 a_isPressed = true;
-            } elseif (!a && a_isPressed) {
+            } else if (!a && a_isPressed) {
                 // a is false and a_isPressed is true, change a_isPressed to false
                 a_isPressed = false;
             } else {
@@ -145,7 +145,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
             if (b && !b_isPressed) {
                 // if (b is true) and not(b_isPressed is false)
                 b_isPressed = true;
-            } elseif (!b && b_isPressed) {
+            } else if (!b && b_isPressed) {
                 // b is false and b_isPressed is true, change b_isPressed to false
                 b_isPressed = false;
             } else {
@@ -159,24 +159,30 @@ public class RobotArmRunToPosition extends LinearOpMode {
 
               case ATCOLLECTPOSITION:
                 if (y_isPressed) {
-                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                   leftArm.setTargetPosition(DEPOSITTARGETPOSITION);
                   rightArm.setTargetPosition(DEPOSITTARGETPOSITION);
+                  
+                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
                   leftArm.setPower(-power);
                   rightArm.setPower(-power);
+                  
                   robotState = ROBOTSTATES.MOVINGTODEPOSITPOSITION;
                 }
                 break;
 
               case ATDEPOSITPOSITION:
                 if (a_isPressed) {
-                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                   leftArm.setTargetPosition(COLLECTARGETPOSITION);
                   rightArm.setTargetPosition(COLLECTARGETPOSITION);
+                  
+                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
                   leftArm.setPower(+power);
                   rightArm.setPower(+power);
+                  
                   robotState = ROBOTSTATES.MOVINGTOCOLLECTPOSITION;
                 }
                 break;
@@ -207,7 +213,7 @@ public class RobotArmRunToPosition extends LinearOpMode {
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Positions", "left (%d), right (%d)", leftArmPosition, rightArmPosition);
-            telemetry.addData("State: " + robotStateDescription);
+            telemetry.addData("State: ", robotStateDescription);
             telemetry.update();
         }
 
@@ -215,36 +221,40 @@ public class RobotArmRunToPosition extends LinearOpMode {
         rightArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
     }
+    
+    public String getRobotStateDescription (ROBOTSTATES robotState) {
+      
+      String robotStateDescription = null;
+      
+      switch (robotState) {
+        case READY:
+          robotStateDescription = "Ready";
+          break;
+        
+        case ATCOLLECTPOSITION:
+          robotStateDescription = "At Collect Position";
+          break;
+        
+        case ATDEPOSITPOSITION:
+          robotStateDescription = "At Deposit Position";
+          break;
+        
+        case MOVINGTOCOLLECTPOSITION:
+          robotStateDescription = "Moving to Collect Position";
+          break;
+        
+        case MOVINGTODEPOSITPOSITION:
+          robotStateDescription = "Moving to Deposit Position";
+          break;
+    
+        default:
+          robotStateDescription = "Not Defined";
+          break;
+        
+      }
+      return robotStateDescription;
+      
+    }
+    
 }
 
-public class getRobotStateDescription (enum ROBOTSTATES robotState) {
-  private String robotStateDescription = null;
-  switch (robotState) {
-    case READY:
-      robotStateDescription = "Ready";
-      break;
-    
-    case ATCOLLECTPOSITION:
-      robotStateDescription = "At Collect Position";
-      break;
-    
-    case ATDEPOSITPOSITION:
-      robotStateDescription = "At Deposit Position";
-      break;
-    
-    case MOVINGTOCOLLECTPOSITION:
-      robotStateDescription = "Moving to Collect Position";
-      break;
-    
-    case MOVINGTODEPOSITPOSITION:
-      robotStateDescription = "Moving to Deposit Position";
-      break;
-
-    default:
-      robotStateDescription = "Not Defined";
-      break;
-    
-  }
-  return robotStateDescription;
-  
-}
