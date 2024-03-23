@@ -1,0 +1,291 @@
+/* Copyright (c) 2017 FIRST. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted (subject to the limitations in the disclaimer below) provided that
+ * the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list
+ * of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or
+ * other materials provided with the distribution.
+ *
+ * Neither the name of FIRST nor the names of its contributors may be used to endorse or
+ * promote products derived from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
+ * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.TeamCode.src/main.java/org/firstinspires/ftc/teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+@TeleOp(name="Robot Arm PID", group="Linear OpMode")
+
+public class RobotArmPID extends LinearOpMode {
+
+    // Declare OpMode members.
+    private ElapsedTime runtime = new ElapsedTime();
+    private DcMotor leftArm = null;
+    private DcMotor rightArm = null;
+
+    private int leftArmPosition = 0;
+    private int rightArmPosition = 0;
+
+    private int COLLECTARGETPOSITION = 0;
+    private int DEPOSITTARGETPOSITION = -1000;
+
+    private double power = 0.75;
+
+    public enum ROBOTSTATES {
+      READY, ATCOLLECTPOSITION, ATDEPOSITPOSITION, MOVINGTOCOLLECTPOSITION, MOVINGTODEPOSITPOSITION
+      }
+
+    public ROBOTSTATES robotState = null;
+
+    public String robotStateDescription = null;
+
+    public boolean a_isPressed = false;
+    public boolean b_isPressed = false;
+    public boolean x_isPressed = false;
+    public boolean y_isPressed = false;
+
+    private PIDController pidRotate;
+
+    @Override
+    public void runOpMode() {
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
+
+        // Initialize the hardware variables. Note that the strings used here as parameters
+        // to 'get' must correspond to the names assigned during the robot configuration
+        // step (using the FTC Robot Controller app on the phone).
+        leftArm  = hardwareMap.get(DcMotor.class, "left_arm");
+        rightArm = hardwareMap.get(DcMotor.class, "right_arm");
+
+        // Left and right motors spin in opposite directions
+        leftArm.setDirection(DcMotor.Direction.REVERSE);
+        rightArm.setDirection(DcMotor.Direction.FORWARD);
+
+        // Reset the motor encoders to zero at the initialization position
+        leftArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // Set zero power behavior
+        leftArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        // Assumes starting at Collect Position
+        // TODO: Add check of Touch Sensor to confirm at Collect Position
+        robotState = ROBOTSTATES.ATCOLLECTPOSITION;
+
+        /** 
+         * Initialize a new PID Controller for the Arm Rotation
+         * @param Kp the proportional coefficient
+         * @param Ki the integral coefficient
+         * @param Kd the deriviative coefficient
+        */
+        pidRotate = new PIDController(.05, 0, 0);
+
+        // Set up parameters for PID Controller
+        pidRotate.setSetpoint(0);
+        pidRotate.setOutputRange(0, power);
+        pidRotate.setInputRange(-90, 90);
+        pidRotate.enable();
+
+        double correction;
+
+        // Wait for the game to start (driver presses PLAY)
+        waitForStart();
+        runtime.reset();
+
+        // run until the end of the match (driver presses STOP)
+        while (opModeIsActive()) {
+
+            leftArmPosition = leftArm.getCurrentPosition();
+            rightArmPosition = rightArm.getCurrentPosition();
+
+            boolean y = gamepad1.y;
+            boolean a = gamepad1.a;
+            boolean b = gamepad1.b;
+            boolean x = gamepad1.x;
+
+            // Check if any buttons changed state
+            // TODO: move this code to a method
+            // x
+            if (x && !x_isPressed) {
+                // if x is true AND x_isPressed is false, change x_isPressed to true
+                x_isPressed = true;
+                // if (x is true) and not(x_isPressed is true) then nothing changes
+            } else if (!x && x_isPressed) {
+                // x is false and x_isPressed is true, change x_isPressed to false
+                x_isPressed = false;
+            } else {
+                // Don't change anything
+            }
+            // y
+            if (y && !y_isPressed) {
+                // if (y is true) AND not(y_isPressed is false)
+                y_isPressed = true;
+            } else if (!y && y_isPressed) {
+                // y is false and y_isPressed is true, change y_isPressed to false
+                y_isPressed = false;
+            } else {
+                // Don't change anything
+            }
+            // a
+            if (a && !a_isPressed) {
+                // if (a is true) AND not(a_isPressed is false)
+                a_isPressed = true;
+            } else if (!a && a_isPressed) {
+                // a is false and a_isPressed is true, change a_isPressed to false
+                a_isPressed = false;
+            } else {
+                // Don't change anything
+            }
+            // b
+            if (b && !b_isPressed) {
+                // if (b is true) and not(b_isPressed is false)
+                b_isPressed = true;
+            } else if (!b && b_isPressed) {
+                // b is false and b_isPressed is true, change b_isPressed to false
+                b_isPressed = false;
+            } else {
+                // Don't change anything
+            }
+
+            switch (robotState) {
+              
+              case READY:
+                break;
+
+              case ATCOLLECTPOSITION:
+                if (y_isPressed) {
+                  /*
+                  leftArm.setTargetPosition(DEPOSITTARGETPOSITION);
+                  rightArm.setTargetPosition(DEPOSITTARGETPOSITION);
+                  
+                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                  leftArm.setPower(-power);
+                  rightArm.setPower(-power);
+                  */
+
+                  pidRotate.setSetpoint(DEPOSITTARGETPOSITION);
+                  robotState = ROBOTSTATES.MOVINGTODEPOSITPOSITION;
+                }
+                break;
+
+              case ATDEPOSITPOSITION:
+                if (a_isPressed) {
+                  /*
+                  leftArm.setTargetPosition(COLLECTARGETPOSITION);
+                  rightArm.setTargetPosition(COLLECTARGETPOSITION);
+                  
+                  leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                  leftArm.setPower(+power);
+                  rightArm.setPower(+power);
+                  */
+                  pidRotate.setSetpoint(COLLECTTARGETPOSITION);
+                  robotState = ROBOTSTATES.MOVINGTOCOLLECTPOSITION;
+                }
+                break;
+
+              case MOVINGTOCOLLECTPOSITION:
+                correction = pidRotate.performPID(leftArmPosition);
+                leftArm.setPower(+power - correction);
+                rightArm.setPower(+power - correction);
+                if (pidRotate.onTarget()) {
+                  leftArm.setPower(0.0);
+                  rightArm.setPower(0.0);
+                  robotState = ROBOTSTATES.ATCOLLECTPOSITION;
+                }
+                break;
+
+              case MOVINGTODEPOSITPOSITION:
+                correction = pidRotate.performPID(leftArmPosition);
+                leftArm.setPower(-power + correction);
+                rightArm.setPower(-power + correction);
+
+                if (pidRotate.onTarget()) {
+                  leftArm.setPower(0.0);
+                  rightArm.setPower(0.0);
+                  robotState = ROBOTSTATES.ATDEPOSITPOSITION;
+                }
+                
+                break;
+
+              default:
+                break;
+              
+            }
+
+            robotStateDescription = getRobotStateDescription(robotState);
+
+            // Show the elapsed game time and wheel power.
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Positions", "left (%d), right (%d)", leftArmPosition, rightArmPosition);
+            telemetry.addData("State: ", robotStateDescription);
+            telemetry.update();
+        }
+
+        leftArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+    }
+    
+    public String getRobotStateDescription (ROBOTSTATES robotState) {
+      
+      String robotStateDescription = null;
+      
+      switch (robotState) {
+        case READY:
+          robotStateDescription = "Ready";
+          break;
+        
+        case ATCOLLECTPOSITION:
+          robotStateDescription = "At Collect Position";
+          break;
+        
+        case ATDEPOSITPOSITION:
+          robotStateDescription = "At Deposit Position";
+          break;
+        
+        case MOVINGTOCOLLECTPOSITION:
+          robotStateDescription = "Moving to Collect Position";
+          break;
+        
+        case MOVINGTODEPOSITPOSITION:
+          robotStateDescription = "Moving to Deposit Position";
+          break;
+    
+        default:
+          robotStateDescription = "Not Defined";
+          break;
+        
+      }
+      return robotStateDescription;
+      
+    }
+    
+}
