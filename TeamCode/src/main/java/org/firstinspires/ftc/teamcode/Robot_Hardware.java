@@ -62,17 +62,22 @@ public class Robot_Hardware {
 
     /* Declare OpMode members. */
     private LinearOpMode myOpMode = null;   // gain access to methods in the calling OpMode.
-
+    
     // Define Motor objects  (Make them private so they can't be accessed externally)
     private DcMotor leftFrontDrive = null;
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor leftArmMotor = null;
+    private DcMotor rightArmMotor = null;
     // Define Servo objects
-    private Servo leftGripperServo = null;
-    private Servo rightGripperServo = null;
+    private Servo GripperServo = null;
+    private Servo leftGripperAngleServo = null;
+    private Servo rightGripperAngleServo = null;
     // Define IMU object
     private IMU imu = null;
+    // Define Sensors
+    private TouchSensor leftTouchSensor = null;
 
     // Define and initialize odometry variables
     private int current_encoderValues[] = new int[3];
@@ -94,14 +99,18 @@ public class Robot_Hardware {
     public static final double FOREWARDOFFSET = -160.0;
     public static final double WHEEL_CIRCUMFERENCE = 50.0 * Math.PI;
 
+    // Position Open
+    static double gripperServoPositionOpen = 0.5;
+    // Position Closed
+    static double gripperServoPositionClosed = 0.0;
     // left Position Open
-    static double leftServoPositionOpen = 0.5;
+    static double leftGripperAngleServoPositionOpen = 0.4;
     // left Position Closed
-    static double leftServoPositionClosed = 0.0;
+    static double leftGripperAngleServoPositionClosed = 0.8;
     // right Position Open
-    static double rightServoPositionOpen = 0.4;
+    static double rightGripperAngleServoPositionOpen = 0.4;
     // right Position Closed
-    static double rightServoPositionClosed = 0.8;
+    static double rightGripperAngleServoServoPositionClosed = 0.8;
 
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot_Hardware(LinearOpMode opmode) {
@@ -125,9 +134,16 @@ public class Robot_Hardware {
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
+        leftArmMotor = myOpMode.hardwareMap.get(DcMotor.class, "left_arm");
+        rightArmMotor = myOpMode.hardwareMap.get(DcMotor.class, "right_arm");
+        
         // Define and initialize Servos
-        leftGripperServo = myOpMode.hardwareMap.get(Servo.class,"leftGripperServo");
-        rightGripperServo = myOpMode.hardwareMap.get(Servo.class, "rightGripperServo");
+        gripperServo = myOpMode.hardwareMap.get(Servo.class,"gripperServo");
+        leftGripperAngleServo = myOpMode.hardwareMap.get(DcMotor.class, "leftGripperAngleServo")
+        rightGripperAngleServo = myOpMode.hardwareMap.get(Servo.class, "rightGripperAngleServo");
+
+        // Define and Initialize Sensors
+        leftTouchSensor = myOpMode.hardwareMap.get(TouchSensor.class, "leftTouchSensor");
 
         // Define and initialize IMU
         imu = myOpMode.hardwareMap.get(IMU.class, "imu");
