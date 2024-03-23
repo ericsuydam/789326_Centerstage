@@ -28,6 +28,7 @@
  */
 
 package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.TeamCode.src/main.java/org/firstinspires/ftc/teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
