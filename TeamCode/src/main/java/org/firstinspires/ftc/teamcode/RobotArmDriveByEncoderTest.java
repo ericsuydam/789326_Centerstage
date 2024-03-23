@@ -59,9 +59,9 @@ public class RobotArmDriveByEncoderTest extends LinearOpMode {
     private int rightArmPosition = 0;
 
     private int COLLECT_TARGET_POSITION = 0;
-    private int DEPOSIT_TARGET_POSITION = -1300;
+    private int DEPOSIT_TARGET_POSITION = -200;
 
-    private double power = 0.75;
+    private double power = 0.2;
 
     public enum ROBOTSTATES {
         READY, AT_COLLECT_POSITION, AT_DEPOSIT_POSITION, MOVING_TO_COLLECT_POSITION, MOVING_TO_DEPOSIT_POSITION
@@ -104,9 +104,21 @@ public class RobotArmDriveByEncoderTest extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
+        leftArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftArm.setTargetPosition(DEPOSIT_TARGET_POSITION);
+        rightArm.setTargetPosition(DEPOSIT_TARGET_POSITION);
+        leftArm.setPower(-power);
+        rightArm.setPower(-power);
+        robotState = ROBOTSTATES.MOVING_TO_DEPOSIT_POSITION;
+        
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
+            leftArmPosition = leftArm.getCurrentPosition();
+            rightArmPosition = rightArm.getCurrentPosition();
+
+            /*
             // Setup a variable for each drive wheel to save power level for telemetry
             double leftPower;
             double rightPower;
@@ -119,6 +131,7 @@ public class RobotArmDriveByEncoderTest extends LinearOpMode {
             rightArm.setPower(-power);
             robotState = ROBOTSTATES.MOVING_TO_DEPOSIT_POSITION;
 
+            
             sleep(10000);
 
             leftArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -130,13 +143,13 @@ public class RobotArmDriveByEncoderTest extends LinearOpMode {
             robotState = ROBOTSTATES.MOVING_TO_COLLECT_POSITION;
 
             sleep(10000);
-            }
-
-
+            */
+            
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Positions", "left (%d), right (%d)", leftArmPosition, rightArmPosition);
             telemetry.update();
         }
+
     }
 }
